@@ -1,26 +1,42 @@
 import { Injectable } from '@nestjs/common';
+import { DatabaseService } from 'src/database/database.service';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
 
 @Injectable()
 export class TimecardsService {
-  create(createTimecardDto: CreateTimecardDto) {
-    return 'This action adds a new timecard';
-  }
+    constructor(private readonly databaseService: DatabaseService) {}
 
-  findAll() {
-    return `This action returns all timecards`;
-  }
+    create(createTimecardDto: CreateTimecardDto) {
+        return this.databaseService.timecard.create({
+            data: createTimecardDto,
+        });
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} timecard`;
-  }
+    findAll() {
+        return this.databaseService.timecard.findMany({
+            where: { isDeleted: false },
+        });
+    }
 
-  update(id: number, updateTimecardDto: UpdateTimecardDto) {
-    return `This action updates a #${id} timecard`;
-  }
+    findOne(id: number) {
+        // why not findunique?
+        return this.databaseService.timecard.findFirst({
+            where: { id, isDeleted: false },
+        });
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} timecard`;
-  }
+    update(id: number, updateTimecardDto: UpdateTimecardDto) {
+        return this.databaseService.timecard.update({
+            where: { id, isDeleted: false },
+            data: updateTimecardDto,
+        });
+    }
+
+    remove(id: number) {
+        return this.databaseService.timecard.update({
+            where: { id },
+            data: { isDeleted: true },
+        });
+    }
 }
