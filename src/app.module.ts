@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TimecardsModule } from './timecards/timecards.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
     imports: [
@@ -10,6 +11,7 @@ import { TimecardsModule } from './timecards/timecards.module';
             isGlobal: true,
         }),
         TimecardsModule,
+        DatabaseModule,
     ],
     controllers: [AppController],
     providers: [AppService],
