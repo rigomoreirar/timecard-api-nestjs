@@ -14,3 +14,16 @@ npm install @prisma/client
 
 Next:
 npx prisma init
+
+For prisma validation:
+npx prisma validate
+
+To do a migration:
+npx prisma migrate dev --name MIGRATION_NAME
+
+For verifying using prisma studio:
+npx prisma studio
+
+Delete all data and start fresh:
+npx prisma migrate reset
+
