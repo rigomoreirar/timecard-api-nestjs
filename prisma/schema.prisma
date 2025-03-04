@@ -13,36 +13,24 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model User {
-    id           Int      @id @default(autoincrement())
-    name         String
-    clientId     String
-    clientSecret String
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
-    isDeleted    Boolean  @default(false)
-    timecard     Timecard[]
-}
-
 model Timecard {
-    id        Int      @id @default(autoincrement())
-    userId    Int     
-    user      User     @relation(fields: [userId], references: [id])
-    title     String
+    id          Int      @id @default(autoincrement())
+    userId      Int // Reference from Auth microservice
+    title       String
     description String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-    entry    Entry[]
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    isDeleted   Boolean  @default(false)
+    entry       Entry[]
 }
 
 model Entry {
-    id        Int      @id @default(autoincrement())
-    timecardId Int
-    timecard   Timecard @relation(fields: [timecardId], references: [id])
-    task     String
+    id              Int      @id @default(autoincrement())
+    timecardId      Int
+    timecard        Timecard @relation(fields: [timecardId], references: [id])
+    task            String
     optionalDetails String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    isDeleted       Boolean  @default(false)
 }
