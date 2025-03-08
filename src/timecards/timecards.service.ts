@@ -1,42 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from 'src/database/database.service';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
+import { TimecardsRepository } from './timecards.repository';
 
 @Injectable()
 export class TimecardsService {
-    constructor(private readonly databaseService: DatabaseService) {}
+    constructor(private readonly timecardsRepository: TimecardsRepository) {}
 
-    create(createTimecardDto: CreateTimecardDto) {
-        return this.databaseService.timecard.create({
-            data: createTimecardDto,
-        });
+    save(createTimecardDto: CreateTimecardDto) {
+        return this.timecardsRepository.save(createTimecardDto);
     }
 
-    findAll() {
-        return this.databaseService.timecard.findMany({
-            where: { isDeleted: false },
-        });
+    getAll() {
+        return this.timecardsRepository.getAll();
     }
 
-    findOne(id: number) {
-        // why not findunique?
-        return this.databaseService.timecard.findFirst({
-            where: { id, isDeleted: false },
-        });
+    getAllUsers() {
+        return this.timecardsRepository.getAllUsers();
     }
 
-    update(id: number, updateTimecardDto: UpdateTimecardDto) {
-        return this.databaseService.timecard.update({
-            where: { id, isDeleted: false },
-            data: updateTimecardDto,
-        });
+    getById(timecardId: number) {
+        return this.timecardsRepository.getById(timecardId);
     }
 
-    remove(id: number) {
-        return this.databaseService.timecard.update({
-            where: { id },
-            data: { isDeleted: true },
-        });
+    getByUserId(userId: number) {
+        return this.timecardsRepository.getByUserId(userId);
+    }
+
+    update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
+        return this.timecardsRepository.update(timecardId, updateTimecardDto);
+    }
+
+    delete(timecardId: number) {
+        return this.timecardsRepository.delete(timecardId);
     }
 }

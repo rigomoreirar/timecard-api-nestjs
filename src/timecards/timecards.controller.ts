@@ -17,30 +17,40 @@ export class TimecardsController {
     constructor(private readonly timecardsService: TimecardsService) {}
 
     @Post()
-    create(@Body() createTimecardDto: CreateTimecardDto) {
-        return this.timecardsService.create(createTimecardDto);
+    save(@Body() createTimecardDto: CreateTimecardDto) {
+        return this.timecardsService.save(createTimecardDto);
     }
 
     @Get()
-    findAll() {
-        return this.timecardsService.findAll();
+    getAll() {
+        return this.timecardsService.getAll();
     }
 
-    @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.timecardsService.findOne(id);
+    @Get('/users')
+    getAllUsers() {
+        return this.timecardsService.getAllUsers();
     }
 
-    @Patch(':id')
+    @Get('/users/:userId')
+    getByUserId(@Param('userId', ParseIntPipe) userId: number) {
+        return this.timecardsService.getByUserId(userId);
+    }
+
+    @Get(':timecardId')
+    getById(@Param('timecardId', ParseIntPipe) timecardId: number) {
+        return this.timecardsService.getById(timecardId);
+    }
+
+    @Patch(':timecardId')
     update(
-        @Param('id', ParseIntPipe) id: number,
+        @Param('timecardId', ParseIntPipe) timecardId: number,
         @Body() updateTimecardDto: UpdateTimecardDto,
     ) {
-        return this.timecardsService.update(id, updateTimecardDto);
+        return this.timecardsService.update(timecardId, updateTimecardDto);
     }
 
-    @Delete(':id')
-    remove(@Param('id', ParseIntPipe) id: number) {
-        return this.timecardsService.remove(id);
+    @Delete(':timecardId')
+    delete(@Param('timecardId', ParseIntPipe) timecardId: number) {
+        return this.timecardsService.delete(timecardId);
     }
 }
