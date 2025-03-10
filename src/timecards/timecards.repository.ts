@@ -8,48 +8,106 @@ export class TimecardsRepository {
     constructor(private readonly databaseService: DatabaseService) {}
 
     save(createTimecardDto: CreateTimecardDto) {
-        return this.databaseService.timecard.create({
-            data: createTimecardDto,
-        });
+        try {
+            return this.databaseService.timecard.create({
+                data: createTimecardDto,
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Failed to save timecard: ${error.message}`);
+            }
+
+            throw new Error('Failed to save timecard: Unknown error');
+        }
     }
 
     getAll() {
-        return this.databaseService.timecard.findMany({
-            where: { isDeleted: false },
-        });
+        try {
+            return this.databaseService.timecard.findMany({
+                where: { isDeleted: false },
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(
+                    `Failed to get all timecards: ${error.message}`,
+                );
+            }
+
+            throw new Error('Failed to get all timecards: Unknown error');
+        }
     }
 
     getAllUsers() {
-        return this.databaseService.timecard.findMany({
-            where: { isDeleted: false },
-            distinct: ['userId'],
-            select: { userId: true },
-        });
+        try {
+            return this.databaseService.timecard.findMany({
+                where: { isDeleted: false },
+                distinct: ['userId'],
+                select: { userId: true },
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Failed to get all users: ${error.message}`);
+            }
+
+            throw new Error('Failed to get all users: Unknown error');
+        }
     }
 
     getById(timecardId: number) {
-        return this.databaseService.timecard.findFirst({
-            where: { id: timecardId, isDeleted: false },
-        });
+        try {
+            return this.databaseService.timecard.findFirst({
+                where: { id: timecardId, isDeleted: false },
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Failed to get timecard: ${error.message}`);
+            }
+
+            throw new Error('Failed to get timecard: Unknown error');
+        }
     }
 
     getByUserId(userId: number) {
-        return this.databaseService.timecard.findFirst({
-            where: { userId: userId, isDeleted: false },
-        });
+        try {
+            return this.databaseService.timecard.findFirst({
+                where: { userId: userId, isDeleted: false },
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Failed to get timecard: ${error.message}`);
+            }
+
+            throw new Error('Failed to get timecard: Unknown error');
+        }
     }
 
     update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
-        return this.databaseService.timecard.update({
-            where: { id: timecardId, isDeleted: false },
-            data: updateTimecardDto,
-        });
+        try {
+            return this.databaseService.timecard.update({
+                where: { id: timecardId, isDeleted: false },
+                data: updateTimecardDto,
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Failed to update timecard: ${error.message}`);
+            }
+
+            throw new Error('Failed to update timecard: Unknown error');
+        }
     }
 
     delete(timecardId: number) {
-        return this.databaseService.timecard.update({
-            where: { id: timecardId },
-            data: { isDeleted: true },
-        });
+        try {
+            return this.databaseService.timecard.update({
+                where: { id: timecardId },
+                data: { isDeleted: true },
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Failed to delete timecard: ${error.message}`);
+            }
+
+            throw new Error('Failed to delete timecard: Unknown error');
+        }
     }
 }

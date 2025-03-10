@@ -1,8 +1,8 @@
 import { IsNotEmpty, IsInt, IsString } from 'class-validator';
 
 export class CreateTimecardDto {
-    // Why not isnumber?
     @IsInt()
+    @IsNotEmpty()
     userId: number;
 
     @IsString()

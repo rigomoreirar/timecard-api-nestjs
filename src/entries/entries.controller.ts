@@ -6,37 +6,55 @@ import {
     Patch,
     Param,
     Delete,
+    ParseIntPipe,
 } from '@nestjs/common';
 import { EntriesService } from './entries.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
 
-@Controller('entries')
+@Controller('timecards/:timecardId/entries')
 export class EntriesController {
     constructor(private readonly entriesService: EntriesService) {}
 
     @Post()
-    create(@Body() createEntryDto: CreateEntryDto) {
-        return this.entriesService.create(createEntryDto);
+    save(
+        @Param('timecardId', ParseIntPipe) timecardId: number,
+        @Body() createEntryDto: CreateEntryDto,
+    ) {
+        return this.entriesService.save(createEntryDto, timecardId);
     }
 
     @Get()
-    findAll() {
-        return this.entriesService.findAll();
+    getAll(@Param('timecardId', ParseIntPipe) timecardId: number) {
+        return this.entriesService.getAll(timecardId);
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.entriesService.findOne(+id);
+    @Get(':entriesId')
+    getById(
+        @Param('timecardId', ParseIntPipe) timecardId: number,
+        @Param('entriesId', ParseIntPipe) entriesId: number,
+    ) {
+        return this.entriesService.getById(timecardId, entriesId);
     }
 
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() updateEntryDto: UpdateEntryDto) {
-        return this.entriesService.update(+id, updateEntryDto);
+    @Patch(':entriesId')
+    update(
+        @Param('timecardId', ParseIntPipe) timecardId: number,
+        @Param('entriesId', ParseIntPipe) entriesId: number,
+        @Body() updateEntryDto: UpdateEntryDto,
+    ) {
+        return this.entriesService.update(
+            updateEntryDto,
+            timecardId,
+            entriesId,
+        );
     }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.entriesService.remove(+id);
+    @Delete(':entriesId')
+    delete(
+        @Param('timecardId', ParseIntPipe) timecardId: number,
+        @Param('entriesId', ParseIntPipe) entriesId: number,
+    ) {
+        return this.entriesService.delete(timecardId, entriesId);
     }
 }

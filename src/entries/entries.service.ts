@@ -1,26 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
+import { EntriesRepository } from './entries.repository';
 
 @Injectable()
 export class EntriesService {
-    create(createEntryDto: CreateEntryDto) {
-        return 'This action adds a new entry';
+    constructor(private readonly entriesRepository: EntriesRepository) {}
+
+    save(createEntryDto: CreateEntryDto, timecardId: number) {
+        const newEntry: CreateEntryDto = {
+            ...createEntryDto,
+            timecardId: timecardId,
+        };
+
+        return this.entriesRepository.save(newEntry);
     }
 
-    findAll() {
-        return `This action returns all entries`;
+    getAll(timecardId: number) {
+        return this.entriesRepository.getAll(timecardId);
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} entry`;
+    getById(timecardId: number, entriesId: number) {
+        return this.entriesRepository.getById(timecardId, entriesId);
     }
 
-    update(id: number, updateEntryDto: UpdateEntryDto) {
-        return `This action updates a #${id} entry`;
+    update(
+        updateEntryDto: UpdateEntryDto,
+        timecardId: number,
+        entriesId: number,
+    ) {
+        const updatedEntry: UpdateEntryDto = {
+            ...updateEntryDto,
+            timecardId: timecardId,
+        };
+
+        return this.entriesRepository.update(updatedEntry, entriesId);
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} entry`;
+    delete(timecardId: number, entriesId: number) {
+        return this.entriesRepository.delete(timecardId, entriesId);
     }
 }
