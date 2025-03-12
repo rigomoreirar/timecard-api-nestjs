@@ -1,15 +1,15 @@
 import { IsNotEmpty, IsInt, IsString } from 'class-validator';
 
 export class CreateTimecardDto {
-    @IsInt()
-    @IsNotEmpty()
+    @IsInt({ message: 'User ID must be an integer.' })
+    @IsNotEmpty({ message: 'User ID is required.' })
     userId: number;
 
-    @IsString()
-    @IsNotEmpty()
+    @IsString({ message: 'Title must be a string.' })
+    @IsNotEmpty({ message: 'Title is required.' })
     title: string;
 
-    @IsNotEmpty()
-    @IsString()
+    @IsString({ message: 'Description must be a string.' })
+    @IsNotEmpty({ message: 'Description is required.' })
     description: string;
 }

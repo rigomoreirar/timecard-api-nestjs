@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
+import { AppLogger } from 'src/logger/app.logger';
 
 @Injectable()
 export class TimecardsRepository {
-    constructor(private readonly databaseService: DatabaseService) {}
+    constructor(
+        private readonly databaseService: DatabaseService,
+        private readonly logger: AppLogger,
+    ) {}
 
     save(createTimecardDto: CreateTimecardDto) {
         try {
@@ -59,11 +63,35 @@ export class TimecardsRepository {
                 where: { id: timecardId, isDeleted: false },
             });
         } catch (error) {
+            const traceId: string = this.logger.createTraceId();
+
             if (error instanceof Error) {
-                throw new Error(`Failed to get timecard: ${error.message}`);
+                this.logger.error({
+                    traceId,
+                    message: 'Database error in getById',
+                    method: 'TimecardsRepository.getById',
+                    optionalParameter: `timecardId: ${timecardId}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve timecard data',
+                    traceId,
+                });
             }
 
-            throw new Error('Failed to get timecard: Unknown error');
+            this.logger.error({
+                traceId,
+                message: 'Database error in getById - unknown error object',
+                method: 'TimecardsRepository.getById',
+                optionalParameter: `timecardId: ${timecardId}`,
+            });
+
+            throw new InternalServerErrorException({
+                message: 'Failed to retrieve timecard data: Unknown error',
+                traceId,
+            });
         }
     }
 
@@ -73,11 +101,36 @@ export class TimecardsRepository {
                 where: { userId: userId, isDeleted: false },
             });
         } catch (error) {
+            const traceId: string = this.logger.createTraceId();
+
             if (error instanceof Error) {
-                throw new Error(`Failed to get timecard: ${error.message}`);
+                this.logger.error({
+                    traceId,
+                    message: 'Database error in getByUserId',
+                    method: 'TimecardsRepository.getByUserId',
+                    optionalParameter: `userId: ${userId}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve timecard data by user ID',
+                    traceId,
+                });
             }
 
-            throw new Error('Failed to get timecard: Unknown error');
+            this.logger.error({
+                traceId,
+                message: 'Database error in getByUserId - unknown error object',
+                method: 'TimecardsRepository.getByUserId',
+                optionalParameter: `userId: ${userId}`,
+            });
+
+            throw new InternalServerErrorException({
+                message:
+                    'Failed to retrieve timecard data by user ID: Unknown error',
+                traceId,
+            });
         }
     }
 
@@ -89,10 +142,10 @@ export class TimecardsRepository {
             });
         } catch (error) {
             if (error instanceof Error) {
-                throw new Error(`Failed to update timecard: ${error.message}`);
+                throw new Error(`Failed to delete timecard: ${error.message}`);
             }
 
-            throw new Error('Failed to update timecard: Unknown error');
+            throw new Error('Failed to delete timecard: Unknown error');
         }
     }
 
