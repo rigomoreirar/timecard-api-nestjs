@@ -5,6 +5,7 @@ import { AppLogger } from './logger/app.logger';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, { logger: false });
+    // const app = await NestFactory.create(AppModule);
     const logger = app.get(AppLogger);
     app.useLogger(logger);
 

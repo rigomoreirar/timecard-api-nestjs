@@ -3,11 +3,11 @@ import { TimecardsService } from './timecards.service';
 import { TimecardsController } from './timecards.controller';
 import { DatabaseModule } from '../database/database.module';
 import { TimecardsRepository } from './timecards.repository';
-import { AppLogger } from 'src/logger/app.logger';
+import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
-    imports: [DatabaseModule],
+    imports: [DatabaseModule, LoggerModule],
     controllers: [TimecardsController],
-    providers: [TimecardsService, TimecardsRepository, AppLogger],
+    providers: [TimecardsService, TimecardsRepository],
 })
 export class TimecardsModule {}

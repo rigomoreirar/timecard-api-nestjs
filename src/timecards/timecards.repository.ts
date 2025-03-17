@@ -17,11 +17,23 @@ export class TimecardsRepository {
                 data: createTimecardDto,
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to save timecard: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to save timecard: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to save',
+                    method: 'TimecardsRepository.save',
+                    optionalParameter: `createTimecardDto: ${JSON.stringify(createTimecardDto)}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to save timecard data',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -31,13 +43,22 @@ export class TimecardsRepository {
                 where: { isDeleted: false },
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(
-                    `Failed to get all timecards: ${error.message}`,
-                );
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to get all timecards: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to getAll',
+                    method: 'TimecardsRepository.getAll',
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve all timecards data',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -49,11 +70,22 @@ export class TimecardsRepository {
                 select: { userId: true },
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to get all users: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to get all users: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to getAllUsers',
+                    method: 'TimecardsRepository.getAllUsers',
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve all users data',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -68,7 +100,7 @@ export class TimecardsRepository {
             if (error instanceof Error) {
                 this.logger.error({
                     traceId,
-                    message: 'Database error in getById',
+                    message: 'Database error when trying to getById',
                     method: 'TimecardsRepository.getById',
                     optionalParameter: `timecardId: ${timecardId}`,
                     errorMessage: error.message,
@@ -80,24 +112,12 @@ export class TimecardsRepository {
                     traceId,
                 });
             }
-
-            this.logger.error({
-                traceId,
-                message: 'Database error in getById - unknown error object',
-                method: 'TimecardsRepository.getById',
-                optionalParameter: `timecardId: ${timecardId}`,
-            });
-
-            throw new InternalServerErrorException({
-                message: 'Failed to retrieve timecard data: Unknown error',
-                traceId,
-            });
         }
     }
 
     getByUserId(userId: number) {
         try {
-            return this.databaseService.timecard.findFirst({
+            return this.databaseService.timecard.findMany({
                 where: { userId: userId, isDeleted: false },
             });
         } catch (error) {
@@ -106,7 +126,7 @@ export class TimecardsRepository {
             if (error instanceof Error) {
                 this.logger.error({
                     traceId,
-                    message: 'Database error in getByUserId',
+                    message: 'Database error when trying to getByUserId',
                     method: 'TimecardsRepository.getByUserId',
                     optionalParameter: `userId: ${userId}`,
                     errorMessage: error.message,
@@ -118,19 +138,6 @@ export class TimecardsRepository {
                     traceId,
                 });
             }
-
-            this.logger.error({
-                traceId,
-                message: 'Database error in getByUserId - unknown error object',
-                method: 'TimecardsRepository.getByUserId',
-                optionalParameter: `userId: ${userId}`,
-            });
-
-            throw new InternalServerErrorException({
-                message:
-                    'Failed to retrieve timecard data by user ID: Unknown error',
-                traceId,
-            });
         }
     }
 
@@ -141,11 +148,23 @@ export class TimecardsRepository {
                 data: updateTimecardDto,
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to delete timecard: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to delete timecard: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to update',
+                    method: 'TimecardsRepository.update',
+                    optionalParameter: `timecardId: ${timecardId}, updateTimecardDto: ${JSON.stringify(updateTimecardDto)}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to update timecard',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -156,11 +175,23 @@ export class TimecardsRepository {
                 data: { isDeleted: true },
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to delete timecard: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to delete timecard: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to delete',
+                    method: 'TimecardsRepository.delete',
+                    optionalParameter: `timecardId: ${timecardId}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to delete timecard',
+                    traceId,
+                });
+            }
         }
     }
 }

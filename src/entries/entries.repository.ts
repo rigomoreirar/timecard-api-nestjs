@@ -1,11 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
+import { AppLogger } from 'src/logger/app.logger';
 
 @Injectable()
 export class EntriesRepository {
-    constructor(private readonly databaseService: DatabaseService) {}
+    constructor(
+        private readonly databaseService: DatabaseService,
+        private readonly logger: AppLogger,
+    ) {}
 
     save(createEntryDto: CreateEntryDto) {
         try {
@@ -13,11 +21,23 @@ export class EntriesRepository {
                 data: createEntryDto,
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to save entry: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to save entry: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to save',
+                    method: 'EntriesRepository.save',
+                    optionalParameter: `createEntryDto: ${JSON.stringify(createEntryDto)}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to save entry data',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -27,11 +47,23 @@ export class EntriesRepository {
                 where: { timecardId: timecardId },
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to get all entries: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to get all entries: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to getAll',
+                    method: 'EntriesRepository.getAll',
+                    optionalParameter: `timecardId: ${timecardId}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve all entries data',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -41,11 +73,23 @@ export class EntriesRepository {
                 where: { id: entryId, timecardId: timecardId },
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to get entry: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to get entry: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to getById',
+                    method: 'EntriesRepository.getById',
+                    optionalParameter: `timecardId: ${timecardId}, entryId: ${entryId}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve entry data',
+                    traceId,
+                });
+            }
         }
     }
 
@@ -56,17 +100,42 @@ export class EntriesRepository {
                 data: updateEntryDto,
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to update entry: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to update entry: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to update',
+                    method: 'EntriesRepository.update',
+                    optionalParameter: `entryId: ${entryId}, updateEntryDto: ${JSON.stringify(updateEntryDto)}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to update entry',
+                    traceId,
+                });
+            }
         }
     }
 
     async delete(timecardId: number, entryId: number) {
+        const traceId: string = this.logger.createTraceId();
+
         if (!timecardId) {
-            throw new Error('Timecard ID is required');
+            this.logger.error({
+                traceId,
+                message:
+                    'Database error when trying to delete, timecard ID is required',
+                method: 'EntriesRepository.delete',
+                optionalParameter: `timecardId: ${timecardId}, entryId: ${entryId}`,
+            });
+
+            throw new BadRequestException({
+                message: 'Timecard ID is required',
+                traceId,
+            });
         }
 
         try {

@@ -1,6 +1,6 @@
 import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import { createLogger, format, transports, Logger } from 'winston';
-import { LogMetadata } from './log-metadata.interface';
+import { LogMetadata } from './logMetadata.interface';
 import * as fs from 'fs';
 import * as path from 'path';
 
