@@ -3,60 +3,193 @@ import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
 import { EntriesRepository } from './entries.repository';
 import { AppLogger } from 'src/logger/app.logger';
+import { TimecardsService } from 'src/timecards/timecards.service';
 
 @Injectable()
 export class EntriesService {
     constructor(
         private readonly entriesRepository: EntriesRepository,
         private readonly logger: AppLogger,
+        private readonly timecardsService: TimecardsService,
     ) {}
 
-    save(createEntryDto: CreateEntryDto, timecardId: number) {
+    async save(createEntryDto: CreateEntryDto, timecardId: number) {
         const newEntry: CreateEntryDto = {
             ...createEntryDto,
             timecardId: timecardId,
         };
 
-        return this.entriesRepository.save(newEntry);
+        const validateTimecardId =
+            await this.timecardsService.validateTimecardId(
+                timecardId,
+                'save',
+                'EntriesService.save',
+                'timecardId',
+                timecardId.toString(),
+            );
+
+        if (validateTimecardId) {
+            const saveEntry = await this.entriesRepository.save(newEntry);
+
+            return {
+                message: 'Entry saved succesfully.',
+                newEntry: saveEntry,
+            };
+        }
     }
 
-    getAll(timecardId: number) {
-        return this.entriesRepository.getAll(timecardId);
+    async getAll(timecardId: number) {
+        const validateTimecardId =
+            await this.timecardsService.validateTimecardId(
+                timecardId,
+                'get',
+                'EntriesService.getAll',
+                'timecardId',
+                timecardId.toString(),
+            );
+
+        if (validateTimecardId) {
+            const allEntries = await this.entriesRepository.getAll(timecardId);
+
+            return allEntries;
+        }
     }
 
-    getById(timecardId: number, entriesId: number) {
-        return this.entriesRepository.getById(timecardId, entriesId);
+    async getById(timecardId: number, entryId: number) {
+        const validateTimecardId =
+            await this.timecardsService.validateTimecardId(
+                timecardId,
+                'get',
+                'EntriesService.getById',
+                'entryId, timecardId',
+                `${entryId}, ${timecardId}`,
+            );
+
+        if (validateTimecardId) {
+            const entry = await this.validateEntryId(
+                entryId,
+                timecardId,
+                'get',
+                'EntriesService.getById',
+                'entryId, timecardId',
+                `${entryId}, ${timecardId}`,
+            );
+
+            return entry;
+        }
     }
 
-    update(
+    async update(
         updateEntryDto: UpdateEntryDto,
         timecardId: number,
-        entriesId: number,
+        entryId: number,
     ) {
-        const updatedEntry: UpdateEntryDto = {
+        const updateEntry: UpdateEntryDto = {
             ...updateEntryDto,
             timecardId: timecardId,
         };
 
-        return this.entriesRepository.update(updatedEntry, entriesId);
+        const validateTimecardId =
+            await this.timecardsService.validateTimecardId(
+                timecardId,
+                'update',
+                'EntriesService.update',
+                'entryId, timecardId',
+                `${entryId}, ${timecardId}`,
+            );
+
+        if (validateTimecardId) {
+            const validateEntryId = await this.validateEntryId(
+                entryId,
+                timecardId,
+                'update',
+                'EntriesService.update',
+                'entriesId, timecardId',
+                `${entryId}, ${timecardId}`,
+            );
+
+            if (validateEntryId) {
+                const updatedEntry = await this.entriesRepository.update(
+                    updateEntry,
+                    entryId,
+                );
+
+                return {
+                    message: 'Entry updated succesfully.',
+                    updatedEntry: updatedEntry,
+                };
+            }
+        }
+    }
+    async delete(timecardId: number, entryId: number) {
+        const validateTimecardId =
+            await this.timecardsService.validateTimecardId(
+                timecardId,
+                'delete',
+                'EntriesService.delete',
+                'entriesId, timecardId',
+                `${entryId}, ${timecardId}`,
+            );
+        if (validateTimecardId) {
+            const validateEntryId = await this.validateEntryId(
+                entryId,
+                timecardId,
+                'delete',
+                'EntriesService.delete',
+                'entriesId, timecardId',
+                `${entryId}, ${timecardId}`,
+            );
+
+            if (validateEntryId) {
+                await this.entriesRepository.delete(timecardId, entryId);
+
+                return {
+                    message: 'Entry deleted succesfully.',
+                    deletedEntry: entryId,
+                    parentTimecardId: timecardId,
+                };
+            }
+        }
     }
 
-    delete(timecardId: number, entryId: number) {
-        const traceId: string = this.logger.createTraceId();
-        if (!timecardId) {
-            this.logger.error({
+    async validateEntryId(
+        entryId: number,
+        timecardId: number,
+        action: string,
+        validationMethod: string,
+        optionalParameterName: string,
+        optionalParameterValue: string,
+    ) {
+        const entry = await this.entriesRepository.getById(timecardId, entryId);
+
+        let validationMessage: string;
+
+        if (action === 'delete' || action === 'get') {
+            validationMessage =
+                'Entry requested does not exist or is already deleted';
+        } else if (action === 'update') {
+            validationMessage =
+                'Cannot update entry data as it does not exist or is already deleted';
+        } else {
+            validationMessage = 'unvalid action';
+        }
+
+        if (!entry) {
+            const traceId: string = this.logger.createTraceId();
+
+            this.logger.warn({
                 traceId,
-                message:
-                    'Database error when trying to delete, timecard ID is required',
-                method: 'EntriesRepository.delete',
-                optionalParameter: `timecardId: ${timecardId}, entryId: ${entryId}`,
+                message: validationMessage,
+                method: validationMethod,
+                optionalParameter: `${optionalParameterName}: ${optionalParameterValue}`,
             });
 
             throw new BadRequestException({
-                message: 'Timecard ID is required',
+                message: 'Entry does not exist',
                 traceId,
             });
-            // return this.entriesRepository.delete(timecardId, entriesId);
+        } else {
+            return entry;
         }
     }
 }

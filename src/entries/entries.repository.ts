@@ -1,8 +1,4 @@
-import {
-    BadRequestException,
-    Injectable,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
@@ -121,42 +117,29 @@ export class EntriesRepository {
     }
 
     async delete(timecardId: number, entryId: number) {
-        const traceId: string = this.logger.createTraceId();
-
-        if (!timecardId) {
-            this.logger.error({
-                traceId,
-                message:
-                    'Database error when trying to delete, timecard ID is required',
-                method: 'EntriesRepository.delete',
-                optionalParameter: `timecardId: ${timecardId}, entryId: ${entryId}`,
-            });
-
-            throw new BadRequestException({
-                message: 'Timecard ID is required',
-                traceId,
-            });
-        }
-
         try {
-            const entryBelongsToTimecard =
-                await this.databaseService.entry.findFirst({
-                    where: { id: entryId, timecardId },
-                });
-
-            if (!entryBelongsToTimecard) {
-                throw new Error('Entry does not belong to timecard');
-            }
-
-            return await this.databaseService.entry.delete({
-                where: { id: entryId, timecardId },
+            return this.databaseService.entry.update({
+                where: { id: timecardId },
+                data: { isDeleted: true },
             });
         } catch (error) {
-            if (error instanceof Error) {
-                throw new Error(`Failed to delete entry: ${error.message}`);
-            }
+            const traceId: string = this.logger.createTraceId();
 
-            throw new Error('Failed to delete entry: Unknown error');
+            if (error instanceof Error) {
+                this.logger.error({
+                    traceId,
+                    message: 'Database error when trying to delete',
+                    method: 'TimecardsRepository.delete',
+                    optionalParameter: `timecardId: ${timecardId}, entryId: ${entryId}`,
+                    errorMessage: error.message,
+                    stack: error.stack,
+                });
+
+                throw new InternalServerErrorException({
+                    message: 'Failed to delete entry',
+                    traceId,
+                });
+            }
         }
     }
 }

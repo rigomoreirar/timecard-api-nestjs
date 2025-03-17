@@ -9,5 +9,6 @@ import { LoggerModule } from 'src/logger/logger.module';
     imports: [DatabaseModule, LoggerModule],
     controllers: [TimecardsController],
     providers: [TimecardsService, TimecardsRepository],
+    exports: [TimecardsService],
 })
 export class TimecardsModule {}

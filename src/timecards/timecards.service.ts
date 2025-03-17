@@ -12,10 +12,13 @@ export class TimecardsService {
     ) {}
 
     async save(createTimecardDto: CreateTimecardDto) {
-        const savedTimecard =
+        const saveTimecard =
             await this.timecardsRepository.save(createTimecardDto);
 
-        return savedTimecard;
+        return {
+            message: 'Timecard saved succesfully.',
+            newTimecard: saveTimecard,
+        };
     }
 
     async getAll() {
@@ -43,15 +46,19 @@ export class TimecardsService {
     }
 
     async getByUserId(userId: number) {
-        const timecards = await this.validateUserId(
+        const userExists = await this.validateUserId(
             userId,
-            'get',
             'TimecardsService.getByUserId',
             'userId',
             userId.toString(),
         );
 
-        return timecards;
+        if (userExists) {
+            const timecards =
+                await this.timecardsRepository.getByUserId(userId);
+
+            return timecards;
+        }
     }
 
     async update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
@@ -69,22 +76,10 @@ export class TimecardsService {
                 updateTimecardDto,
             );
 
-            if (updatedTimecard === null) {
-                const traceId: string = this.logger.createTraceId();
-
-                this.logger.warn({
-                    traceId,
-                    message: 'Failed to update timecard data',
-                    method: 'TimecardsService.update',
-                    optionalParameter: `timecardId: ${timecardId}, updateTimecardDto: ${JSON.stringify(updateTimecardDto)}`,
-                });
-                throw new NotFoundException({
-                    message: 'Failed to update timecard data',
-                    traceId,
-                });
-            } else {
-                return updatedTimecard;
-            }
+            return {
+                message: 'Timecard updated succesfully.',
+                updatedTimecard: updatedTimecard,
+            };
         }
     }
 
@@ -98,28 +93,12 @@ export class TimecardsService {
         );
 
         if (validateTimecardId) {
-            const deletedTimecard =
-                await this.timecardsRepository.delete(timecardId);
+            await this.timecardsRepository.delete(timecardId);
 
-            if (deletedTimecard === null) {
-                const traceId: string = this.logger.createTraceId();
-
-                this.logger.warn({
-                    traceId,
-                    message: 'Failed to delete timecard data',
-                    method: 'TimecardsService.delete',
-                    optionalParameter: `timecardId: ${timecardId}`,
-                });
-                throw new NotFoundException({
-                    message: 'Failed to delete timecard data',
-                    traceId,
-                });
-            } else {
-                return {
-                    id: timecardId,
-                    message: 'Timecard deleted successfully',
-                };
-            }
+            return {
+                message: 'Timecard deleted successfully',
+                deletedTimecardId: timecardId,
+            };
         }
     }
 
@@ -164,13 +143,10 @@ export class TimecardsService {
 
     async validateUserId(
         userId: number,
-        action: string,
         validationMethod: string,
         optionalParameterName: string,
         optionalParameterValue: string,
     ) {
-        const timecard = await this.timecardsRepository.getByUserId(userId);
-
         const users = await this.timecardsRepository.getAllUsers();
         let userExists = false;
 
@@ -178,34 +154,12 @@ export class TimecardsService {
             userExists = users.some((user) => user.userId === userId);
         }
 
-        let validationMessage: string;
-
-        if (action === 'get') {
-            validationMessage =
-                'User has no timecards or timecards are already deleted';
-        } else {
-            validationMessage = 'unvalid action';
-        }
-
         if (!userExists) {
             const traceId: string = this.logger.createTraceId();
 
             this.logger.warn({
                 traceId,
-                message: validationMessage,
-                method: validationMethod,
-                optionalParameter: `${optionalParameterName}: ${optionalParameterValue}`,
-            });
-            throw new NotFoundException({
-                message: 'User has no timecards available',
-                traceId,
-            });
-        } else if (timecard?.length === 0) {
-            const traceId: string = this.logger.createTraceId();
-
-            this.logger.warn({
-                traceId,
-                message: validationMessage,
+                message: "User doesn't exist or has no timecards available",
                 method: validationMethod,
                 optionalParameter: `${optionalParameterName}: ${optionalParameterValue}`,
             });
@@ -214,7 +168,7 @@ export class TimecardsService {
                 traceId,
             });
         } else {
-            return timecard;
+            return true;
         }
     }
 }

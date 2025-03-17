@@ -4,9 +4,10 @@ import { EntriesController } from './entries.controller';
 import { DatabaseModule } from '../database/database.module';
 import { EntriesRepository } from './entries.repository';
 import { LoggerModule } from 'src/logger/logger.module';
+import { TimecardsModule } from 'src/timecards/timecards.module';
 
 @Module({
-    imports: [DatabaseModule, LoggerModule],
+    imports: [DatabaseModule, LoggerModule, TimecardsModule],
     controllers: [EntriesController],
     providers: [EntriesService, EntriesRepository],
 })
