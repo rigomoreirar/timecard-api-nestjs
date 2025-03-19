@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
 import { EntriesRepository } from './entries.repository';
@@ -51,7 +55,23 @@ export class EntriesService {
         if (validateTimecardId) {
             const allEntries = await this.entriesRepository.getAll(timecardId);
 
-            return allEntries;
+            if (!allEntries || allEntries.length === 0) {
+                const traceId: string = this.logger.createTraceId();
+
+                this.logger.warn({
+                    traceId,
+                    message:
+                        'No entries found, empty string returned from database',
+                    method: 'EntriesService.getAll',
+                });
+
+                throw new NotFoundException({
+                    message: 'No entries found',
+                    traceId,
+                });
+            } else {
+                return allEntries;
+            }
         }
     }
 

@@ -24,13 +24,42 @@ export class TimecardsService {
     async getAll() {
         const allTimecards = await this.timecardsRepository.getAll();
 
-        return allTimecards;
+        if (!allTimecards || allTimecards.length === 0) {
+            const traceId: string = this.logger.createTraceId();
+
+            this.logger.warn({
+                traceId,
+                message:
+                    'No timecards found, empty string returned from database',
+                method: 'TimecardsService.getAll',
+            });
+            throw new NotFoundException({
+                message: 'No timecards found',
+                traceId,
+            });
+        } else {
+            return allTimecards;
+        }
     }
 
     async getAllUsers() {
         const allUsers = await this.timecardsRepository.getAllUsers();
 
-        return allUsers;
+        if (!allUsers || allUsers.length === 0) {
+            const traceId: string = this.logger.createTraceId();
+
+            this.logger.warn({
+                traceId,
+                message: 'No users found, empty string returned from database',
+                method: 'TimecardsService.getAllUsers',
+            });
+            throw new NotFoundException({
+                message: 'No users found',
+                traceId,
+            });
+        } else {
+            return allUsers;
+        }
     }
 
     async getById(timecardId: number) {
