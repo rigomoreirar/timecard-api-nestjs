@@ -11,187 +11,118 @@ export class TimecardsRepository {
         private readonly logger: AppLogger,
     ) {}
 
-    save(createTimecardDto: CreateTimecardDto) {
+    async save(createTimecardDto: CreateTimecardDto) {
         try {
-            return this.databaseService.timecard.create({
+            return await this.databaseService.timecard.create({
                 data: createTimecardDto,
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to save',
-                    method: 'TimecardsRepository.save',
-                    optionalParameter: `createTimecardDto: ${JSON.stringify(createTimecardDto)}`,
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to save timecard data',
-                    traceId,
                 });
             }
+
+            throw error;
         }
     }
 
-    getAll() {
+    async getAll() {
         try {
-            return this.databaseService.timecard.findMany({
+            return await this.databaseService.timecard.findMany({
                 where: { isDeleted: false },
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to getAll',
-                    method: 'TimecardsRepository.getAll',
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to retrieve all timecards data',
-                    traceId,
                 });
             }
+            throw error;
         }
     }
 
-    getAllUsers() {
+    async getAllUsers() {
         try {
-            return this.databaseService.timecard.findMany({
+            return await this.databaseService.timecard.findMany({
                 where: { isDeleted: false },
                 distinct: ['userId'],
                 select: { userId: true },
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to getAllUsers',
-                    method: 'TimecardsRepository.getAllUsers',
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to retrieve all users data',
-                    traceId,
                 });
             }
+
+            throw error;
         }
     }
 
-    getById(timecardId: number) {
+    async getById(timecardId: number) {
         try {
-            return this.databaseService.timecard.findFirst({
+            return await this.databaseService.timecard.findFirst({
                 where: { id: timecardId, isDeleted: false },
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to getById',
-                    method: 'TimecardsRepository.getById',
-                    optionalParameter: `timecardId: ${timecardId}`,
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to retrieve timecard data',
-                    traceId,
                 });
             }
+
+            throw error;
         }
     }
 
-    getByUserId(userId: number) {
+    async getByUserId(userId: number) {
         try {
-            return this.databaseService.timecard.findMany({
+            return await this.databaseService.timecard.findMany({
                 where: { userId: userId, isDeleted: false },
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to getByUserId',
-                    method: 'TimecardsRepository.getByUserId',
-                    optionalParameter: `userId: ${userId}`,
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to retrieve timecard data by user ID',
-                    traceId,
                 });
             }
+
+            throw error;
         }
     }
 
-    update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
+    async update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
         try {
-            return this.databaseService.timecard.update({
+            return await this.databaseService.timecard.update({
                 where: { id: timecardId, isDeleted: false },
                 data: updateTimecardDto,
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to update',
-                    method: 'TimecardsRepository.update',
-                    optionalParameter: `timecardId: ${timecardId}, updateTimecardDto: ${JSON.stringify(updateTimecardDto)}`,
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to update timecard',
-                    traceId,
                 });
             }
+
+            throw error;
         }
     }
 
-    delete(timecardId: number) {
+    async delete(timecardId: number) {
         try {
-            return this.databaseService.timecard.update({
+            return await this.databaseService.timecard.update({
                 where: { id: timecardId },
                 data: { isDeleted: true },
             });
         } catch (error) {
-            const traceId: string = this.logger.createTraceId();
-
             if (error instanceof Error) {
-                this.logger.error({
-                    traceId,
-                    message: 'Database error when trying to delete',
-                    method: 'TimecardsRepository.delete',
-                    optionalParameter: `timecardId: ${timecardId}`,
-                    errorMessage: error.message,
-                    stack: error.stack,
-                });
-
                 throw new InternalServerErrorException({
                     message: 'Failed to delete timecard',
-                    traceId,
                 });
             }
+
+            throw error;
         }
     }
 }

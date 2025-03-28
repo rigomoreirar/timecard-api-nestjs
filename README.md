@@ -27,3 +27,6 @@ npx prisma studio
 Delete all data and start fresh:
 npx prisma migrate reset
 
+For sending tables to new dbs
+npx prisma db push
+

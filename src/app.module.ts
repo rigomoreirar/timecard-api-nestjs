@@ -12,10 +12,10 @@ import { LoggerModule } from './logger/logger.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        LoggerModule,
         TimecardsModule,
         DatabaseModule,
         EntriesModule,
-        LoggerModule,
     ],
     controllers: [AppController],
     providers: [AppService],

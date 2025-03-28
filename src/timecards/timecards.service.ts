@@ -2,14 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
 import { TimecardsRepository } from './timecards.repository';
-import { AppLogger } from 'src/logger/app.logger';
 
 @Injectable()
 export class TimecardsService {
-    constructor(
-        private readonly timecardsRepository: TimecardsRepository,
-        private readonly logger: AppLogger,
-    ) {}
+    constructor(private readonly timecardsRepository: TimecardsRepository) {}
 
     async save(createTimecardDto: CreateTimecardDto) {
         const saveTimecard =
@@ -25,17 +21,8 @@ export class TimecardsService {
         const allTimecards = await this.timecardsRepository.getAll();
 
         if (!allTimecards || allTimecards.length === 0) {
-            const traceId: string = this.logger.createTraceId();
-
-            this.logger.warn({
-                traceId,
-                message:
-                    'No timecards found, empty string returned from database',
-                method: 'TimecardsService.getAll',
-            });
             throw new NotFoundException({
                 message: 'No timecards found',
-                traceId,
             });
         } else {
             return allTimecards;
@@ -46,16 +33,8 @@ export class TimecardsService {
         const allUsers = await this.timecardsRepository.getAllUsers();
 
         if (!allUsers || allUsers.length === 0) {
-            const traceId: string = this.logger.createTraceId();
-
-            this.logger.warn({
-                traceId,
-                message: 'No users found, empty string returned from database',
-                method: 'TimecardsService.getAllUsers',
-            });
             throw new NotFoundException({
                 message: 'No users found',
-                traceId,
             });
         } else {
             return allUsers;
@@ -63,24 +42,13 @@ export class TimecardsService {
     }
 
     async getById(timecardId: number) {
-        const timecard = await this.validateTimecardId(
-            timecardId,
-            'get',
-            'TimecardsService.getById',
-            'timecardId',
-            timecardId.toString(),
-        );
+        const timecard = await this.validateTimecardId(timecardId);
 
         return timecard;
     }
 
     async getByUserId(userId: number) {
-        const userExists = await this.validateUserId(
-            userId,
-            'TimecardsService.getByUserId',
-            'userId',
-            userId.toString(),
-        );
+        const userExists = await this.validateUserId(userId);
 
         if (userExists) {
             const timecards =
@@ -91,13 +59,7 @@ export class TimecardsService {
     }
 
     async update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
-        const validateTimecardId = await this.validateTimecardId(
-            timecardId,
-            'update',
-            'TimecardsService.update',
-            'timecardId',
-            timecardId.toString(),
-        );
+        const validateTimecardId = await this.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             const updatedTimecard = await this.timecardsRepository.update(
@@ -113,13 +75,7 @@ export class TimecardsService {
     }
 
     async delete(timecardId: number) {
-        const validateTimecardId = await this.validateTimecardId(
-            timecardId,
-            'delete',
-            'TimecardsService.delete',
-            'timecardId',
-            timecardId.toString(),
-        );
+        const validateTimecardId = await this.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             await this.timecardsRepository.delete(timecardId);
@@ -131,51 +87,19 @@ export class TimecardsService {
         }
     }
 
-    async validateTimecardId(
-        timecardId: number,
-        action: string,
-        validationMethod: string,
-        optionalParameterName: string,
-        optionalParameterValue: string,
-    ) {
+    async validateTimecardId(timecardId: number) {
         const timecard = await this.timecardsRepository.getById(timecardId);
 
-        let validationMessage: string;
-
-        if (action === 'delete' || action === 'get') {
-            validationMessage =
-                'Timecard requested does not exist or is already deleted';
-        } else if (action === 'update') {
-            validationMessage =
-                'Cannot update timecard data as it does not exist or is already deleted';
-        } else {
-            validationMessage = 'unvalid action';
-        }
-
         if (!timecard) {
-            const traceId: string = this.logger.createTraceId();
-
-            this.logger.warn({
-                traceId,
-                message: validationMessage,
-                method: validationMethod,
-                optionalParameter: `${optionalParameterName}: ${optionalParameterValue}`,
-            });
             throw new NotFoundException({
                 message: 'Timecard does not exist',
-                traceId,
             });
         } else {
             return timecard;
         }
     }
 
-    async validateUserId(
-        userId: number,
-        validationMethod: string,
-        optionalParameterName: string,
-        optionalParameterValue: string,
-    ) {
+    async validateUserId(userId: number) {
         const users = await this.timecardsRepository.getAllUsers();
         let userExists = false;
 
@@ -184,17 +108,8 @@ export class TimecardsService {
         }
 
         if (!userExists) {
-            const traceId: string = this.logger.createTraceId();
-
-            this.logger.warn({
-                traceId,
-                message: "User doesn't exist or has no timecards available",
-                method: validationMethod,
-                optionalParameter: `${optionalParameterName}: ${optionalParameterValue}`,
-            });
             throw new NotFoundException({
                 message: 'User has no timecards available',
-                traceId,
             });
         } else {
             return true;

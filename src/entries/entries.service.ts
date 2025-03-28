@@ -6,14 +6,12 @@ import {
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
 import { EntriesRepository } from './entries.repository';
-import { AppLogger } from 'src/logger/app.logger';
 import { TimecardsService } from 'src/timecards/timecards.service';
 
 @Injectable()
 export class EntriesService {
     constructor(
         private readonly entriesRepository: EntriesRepository,
-        private readonly logger: AppLogger,
         private readonly timecardsService: TimecardsService,
     ) {}
 
@@ -24,13 +22,7 @@ export class EntriesService {
         };
 
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(
-                timecardId,
-                'save',
-                'EntriesService.save',
-                'timecardId',
-                timecardId.toString(),
-            );
+            await this.timecardsService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             const saveEntry = await this.entriesRepository.save(newEntry);
@@ -44,30 +36,14 @@ export class EntriesService {
 
     async getAll(timecardId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(
-                timecardId,
-                'get',
-                'EntriesService.getAll',
-                'timecardId',
-                timecardId.toString(),
-            );
+            await this.timecardsService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             const allEntries = await this.entriesRepository.getAll(timecardId);
 
             if (!allEntries || allEntries.length === 0) {
-                const traceId: string = this.logger.createTraceId();
-
-                this.logger.warn({
-                    traceId,
-                    message:
-                        'No entries found, empty string returned from database',
-                    method: 'EntriesService.getAll',
-                });
-
                 throw new NotFoundException({
                     message: 'No entries found',
-                    traceId,
                 });
             } else {
                 return allEntries;
@@ -77,23 +53,10 @@ export class EntriesService {
 
     async getById(timecardId: number, entryId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(
-                timecardId,
-                'get',
-                'EntriesService.getById',
-                'entryId, timecardId',
-                `${entryId}, ${timecardId}`,
-            );
+            await this.timecardsService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            const entry = await this.validateEntryId(
-                entryId,
-                timecardId,
-                'get',
-                'EntriesService.getById',
-                'entryId, timecardId',
-                `${entryId}, ${timecardId}`,
-            );
+            const entry = await this.validateEntryId(entryId, timecardId);
 
             return entry;
         }
@@ -110,22 +73,12 @@ export class EntriesService {
         };
 
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(
-                timecardId,
-                'update',
-                'EntriesService.update',
-                'entryId, timecardId',
-                `${entryId}, ${timecardId}`,
-            );
+            await this.timecardsService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             const validateEntryId = await this.validateEntryId(
                 entryId,
                 timecardId,
-                'update',
-                'EntriesService.update',
-                'entriesId, timecardId',
-                `${entryId}, ${timecardId}`,
             );
 
             if (validateEntryId) {
@@ -143,25 +96,15 @@ export class EntriesService {
     }
     async delete(timecardId: number, entryId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(
-                timecardId,
-                'delete',
-                'EntriesService.delete',
-                'entriesId, timecardId',
-                `${entryId}, ${timecardId}`,
-            );
+            await this.timecardsService.validateTimecardId(timecardId);
         if (validateTimecardId) {
             const validateEntryId = await this.validateEntryId(
                 entryId,
                 timecardId,
-                'delete',
-                'EntriesService.delete',
-                'entriesId, timecardId',
-                `${entryId}, ${timecardId}`,
             );
 
             if (validateEntryId) {
-                await this.entriesRepository.delete(timecardId, entryId);
+                await this.entriesRepository.delete(entryId);
 
                 return {
                     message: 'Entry deleted succesfully.',
@@ -172,41 +115,12 @@ export class EntriesService {
         }
     }
 
-    async validateEntryId(
-        entryId: number,
-        timecardId: number,
-        action: string,
-        validationMethod: string,
-        optionalParameterName: string,
-        optionalParameterValue: string,
-    ) {
+    async validateEntryId(entryId: number, timecardId: number) {
         const entry = await this.entriesRepository.getById(timecardId, entryId);
 
-        let validationMessage: string;
-
-        if (action === 'delete' || action === 'get') {
-            validationMessage =
-                'Entry requested does not exist or is already deleted';
-        } else if (action === 'update') {
-            validationMessage =
-                'Cannot update entry data as it does not exist or is already deleted';
-        } else {
-            validationMessage = 'unvalid action';
-        }
-
         if (!entry) {
-            const traceId: string = this.logger.createTraceId();
-
-            this.logger.warn({
-                traceId,
-                message: validationMessage,
-                method: validationMethod,
-                optionalParameter: `${optionalParameterName}: ${optionalParameterValue}`,
-            });
-
             throw new BadRequestException({
                 message: 'Entry does not exist',
-                traceId,
             });
         } else {
             return entry;
