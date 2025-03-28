@@ -1,16 +1,15 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-import { CreateEntryDto } from './dto/create-entry.dto';
-import { UpdateEntryDto } from './dto/update-entry.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EntriesRepository {
     constructor(private readonly databaseService: DatabaseService) {}
 
-    async save(createEntryDto: CreateEntryDto) {
+    async save(entryCreateInput: Prisma.EntryCreateInput) {
         try {
             return this.databaseService.entry.create({
-                data: createEntryDto,
+                data: entryCreateInput,
             });
         } catch (error) {
             if (error instanceof Error) {
@@ -55,11 +54,11 @@ export class EntriesRepository {
         }
     }
 
-    async update(updateEntryDto: UpdateEntryDto, entryId: number) {
+    async update(entryId: number, entryUpdateInput: Prisma.EntryUpdateInput) {
         try {
             return this.databaseService.entry.update({
                 where: { id: entryId },
-                data: updateEntryDto,
+                data: entryUpdateInput,
             });
         } catch (error) {
             if (error instanceof Error) {

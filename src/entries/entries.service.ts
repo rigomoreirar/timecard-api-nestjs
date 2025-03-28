@@ -7,6 +7,7 @@ import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
 import { EntriesRepository } from './entries.repository';
 import { TimecardsService } from 'src/timecards/timecards.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EntriesService {
@@ -16,20 +17,22 @@ export class EntriesService {
     ) {}
 
     async save(createEntryDto: CreateEntryDto, timecardId: number) {
-        const newEntry: CreateEntryDto = {
-            ...createEntryDto,
-            timecardId: timecardId,
-        };
-
         const validateTimecardId =
             await this.timecardsService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            const saveEntry = await this.entriesRepository.save(newEntry);
+            const newEntry: Prisma.EntryCreateInput = {
+                task: createEntryDto.task,
+                optionalDetails: createEntryDto.optionalDetails,
+                timecard: {
+                    connect: { id: timecardId },
+                },
+            };
+            const savedEntry = await this.entriesRepository.save(newEntry);
 
             return {
                 message: 'Entry saved succesfully.',
-                newEntry: saveEntry,
+                newEntry: savedEntry,
             };
         }
     }
@@ -67,11 +70,6 @@ export class EntriesService {
         timecardId: number,
         entryId: number,
     ) {
-        const updateEntry: UpdateEntryDto = {
-            ...updateEntryDto,
-            timecardId: timecardId,
-        };
-
         const validateTimecardId =
             await this.timecardsService.validateTimecardId(timecardId);
 
@@ -82,9 +80,14 @@ export class EntriesService {
             );
 
             if (validateEntryId) {
+                const newEntry: Prisma.EntryUpdateInput = {
+                    task: updateEntryDto.task,
+                    optionalDetails: updateEntryDto.optionalDetails,
+                };
+
                 const updatedEntry = await this.entriesRepository.update(
-                    updateEntry,
                     entryId,
+                    newEntry,
                 );
 
                 return {

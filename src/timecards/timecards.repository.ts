@@ -1,20 +1,15 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-import { CreateTimecardDto } from './dto/create-timecard.dto';
-import { UpdateTimecardDto } from './dto/update-timecard.dto';
-import { AppLogger } from 'src/logger/app.logger';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TimecardsRepository {
-    constructor(
-        private readonly databaseService: DatabaseService,
-        private readonly logger: AppLogger,
-    ) {}
+    constructor(private readonly databaseService: DatabaseService) {}
 
-    async save(createTimecardDto: CreateTimecardDto) {
+    async save(timecardCreateInput: Prisma.TimecardCreateInput) {
         try {
             return await this.databaseService.timecard.create({
-                data: createTimecardDto,
+                data: timecardCreateInput,
             });
         } catch (error) {
             if (error instanceof Error) {
@@ -92,11 +87,14 @@ export class TimecardsRepository {
         }
     }
 
-    async update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
+    async update(
+        timecardId: number,
+        timecardUpdateInput: Prisma.TimecardUpdateInput,
+    ) {
         try {
             return await this.databaseService.timecard.update({
                 where: { id: timecardId, isDeleted: false },
-                data: updateTimecardDto,
+                data: timecardUpdateInput,
             });
         } catch (error) {
             if (error instanceof Error) {
