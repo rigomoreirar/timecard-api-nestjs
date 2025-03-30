@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AppLogger } from './app.logger';
+import { ValidationErrorResponse } from './logger.interface';
 
 @Catch(HttpException)
 export class LoggerHttpExceptionFilter implements ExceptionFilter {
@@ -17,11 +18,30 @@ export class LoggerHttpExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
 
-        const status = exception.getStatus
-            ? exception.getStatus()
-            : HttpStatus.INTERNAL_SERVER_ERROR;
+        const status =
+            exception.getStatus?.() ?? HttpStatus.INTERNAL_SERVER_ERROR;
 
         const traceId = this.logger.createTraceId();
+
+        const exceptionResponse = exception.getResponse() as
+            | string
+            | ValidationErrorResponse;
+
+        let responseBody: Record<string, unknown> = {
+            statusCode: status,
+            timestamp: new Date().toISOString(),
+            traceId,
+            path: request.url,
+        };
+
+        if (typeof exceptionResponse === 'string') {
+            responseBody.message = exceptionResponse;
+        } else {
+            responseBody = {
+                ...responseBody,
+                ...exceptionResponse,
+            };
+        }
 
         const logData = {
             traceId,
@@ -34,21 +54,16 @@ export class LoggerHttpExceptionFilter implements ExceptionFilter {
             method: request.method,
             url: request.url,
             originalUrl: request.originalUrl,
-            ip: request.ip || '',
+            ip: request.ip ?? '',
             query: request.query as Record<string, any>,
             body: request.body as Record<string, any>,
             headers: request.headers as Record<string, string | string[]>,
             userAgent: request.get('user-agent'),
+            responseBody: responseBody,
         };
 
         this.logger.error(logData);
 
-        response.status(status).json({
-            statusCode: status,
-            timestamp: new Date().toISOString(),
-            traceId,
-            path: request.url,
-            message: exception.message,
-        });
+        return response.status(status).json(responseBody);
     }
 }

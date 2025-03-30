@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
+import { Prisma } from '@prisma/client';
 import { TimecardsRepository } from './timecards.repository';
 
 @Injectable()
@@ -8,12 +9,15 @@ export class TimecardsService {
     constructor(private readonly timecardsRepository: TimecardsRepository) {}
 
     async save(createTimecardDto: CreateTimecardDto) {
-        const saveTimecard =
-            await this.timecardsRepository.save(createTimecardDto);
+        const newTimecard: Prisma.TimecardCreateInput = {
+            ...createTimecardDto,
+        };
+
+        const savedTimecard = await this.timecardsRepository.save(newTimecard);
 
         return {
             message: 'Timecard saved succesfully.',
-            newTimecard: saveTimecard,
+            newTimecard: savedTimecard,
         };
     }
 
@@ -62,9 +66,13 @@ export class TimecardsService {
         const validateTimecardId = await this.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
+            const newTimecard: Prisma.TimecardUpdateInput = {
+                ...updateTimecardDto,
+            };
+
             const updatedTimecard = await this.timecardsRepository.update(
                 timecardId,
-                updateTimecardDto,
+                newTimecard,
             );
 
             return {
