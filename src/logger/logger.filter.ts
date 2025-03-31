@@ -1,3 +1,4 @@
+// file: logger-exception.filter.ts
 import {
     Catch,
     ExceptionFilter,
@@ -7,63 +8,91 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AppLogger } from './app.logger';
-import { ValidationErrorResponse } from './logger.interface';
 
-@Catch(HttpException)
-export class LoggerHttpExceptionFilter implements ExceptionFilter {
+@Catch() // No arguments => catch *all* exceptions
+export class LoggerExceptionFilter implements ExceptionFilter {
     constructor(private readonly logger: AppLogger) {}
 
-    catch(exception: HttpException, host: ArgumentsHost) {
+    catch(exception: unknown, host: ArgumentsHost): void {
         const ctx = host.switchToHttp();
-        const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
+        const response = ctx.getResponse<Response>();
 
-        const status =
-            exception.getStatus?.() ?? HttpStatus.INTERNAL_SERVER_ERROR;
+        let status = HttpStatus.INTERNAL_SERVER_ERROR;
+        let exceptionResponse: unknown = {};
+        let errorName = 'UnknownError';
+        let stack: string | undefined;
+
+        if (exception instanceof HttpException) {
+            status = exception.getStatus();
+            exceptionResponse = exception.getResponse();
+            errorName = exception.name;
+            stack = exception.stack;
+        } else if (exception instanceof Error) {
+            errorName = exception.name;
+            stack = exception.stack;
+        }
 
         const traceId = this.logger.createTraceId();
+        const timestamp = new Date().toISOString();
 
-        const exceptionResponse = exception.getResponse() as
-            | string
-            | ValidationErrorResponse;
+        const errorMessage = this.getDetailedError(exception);
 
-        let responseBody: Record<string, unknown> = {
+        const responseBody: Record<string, unknown> = {
             statusCode: status,
-            timestamp: new Date().toISOString(),
+            timestamp,
             traceId,
             path: request.url,
         };
 
-        if (typeof exceptionResponse === 'string') {
-            responseBody.message = exceptionResponse;
-        } else {
-            responseBody = {
-                ...responseBody,
-                ...exceptionResponse,
-            };
+        if (
+            typeof exceptionResponse === 'object' &&
+            exceptionResponse !== null
+        ) {
+            Object.assign(responseBody, exceptionResponse);
+        } else if (typeof exceptionResponse === 'string') {
+            Object.assign(responseBody, { message: exceptionResponse });
+        }
+
+        if (
+            status === HttpStatus.INTERNAL_SERVER_ERROR &&
+            !('message' in responseBody)
+        ) {
+            responseBody['message'] = 'Internal Server Error';
         }
 
         const logData = {
             traceId,
-            timestamp: new Date().toISOString(),
+            timestamp,
             level: 'error',
             statusCode: status,
-            errorMessage: exception.message,
-            errorName: exception.name,
-            stack: (exception as Error).stack,
+            errorName,
+            errorMessage,
+            stack,
             method: request.method,
             url: request.url,
             originalUrl: request.originalUrl,
             ip: request.ip ?? '',
-            query: request.query as Record<string, any>,
-            body: request.body as Record<string, any>,
+            query: request.query as Record<string, unknown>,
+            body: request.body as Record<string, unknown>,
             headers: request.headers as Record<string, string | string[]>,
             userAgent: request.get('user-agent'),
-            responseBody: responseBody,
+            responseBody,
         };
 
         this.logger.error(logData);
 
-        return response.status(status).json(responseBody);
+        response.status(status).json(responseBody);
+    }
+
+    private getDetailedError(exception: unknown): string {
+        if (exception instanceof Error) {
+            return exception.message;
+        }
+        try {
+            return JSON.stringify(exception);
+        } catch {
+            return String(exception);
+        }
     }
 }

@@ -15,9 +15,3 @@ export interface LogMetadata {
     headers?: Record<string, string | string[]>;
     userAgent?: string;
 }
-
-export interface ValidationErrorResponse {
-    statusCode: number;
-    message: string | string[];
-    error: string;
-}
