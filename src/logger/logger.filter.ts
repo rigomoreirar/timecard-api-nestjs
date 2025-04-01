@@ -77,6 +77,7 @@ export class LoggerExceptionFilter implements ExceptionFilter {
             body: request.body as Record<string, unknown>,
             headers: request.headers as Record<string, string | string[]>,
             userAgent: request.get('user-agent'),
+            requestBody: request.body as Record<string, unknown>,
             responseBody,
         };
 
