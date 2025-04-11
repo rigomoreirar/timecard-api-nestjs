@@ -1,17 +1,38 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
 import { Prisma } from '@prisma/client';
 import { TimecardsRepository } from './timecards.repository';
+import { JwtResponse } from 'src/auth/auth.interface';
 
 @Injectable()
 export class TimecardsService {
     constructor(private readonly timecardsRepository: TimecardsRepository) {}
 
-    async save(createTimecardDto: CreateTimecardDto) {
-        const newTimecard: Prisma.TimecardCreateInput = {
-            ...createTimecardDto,
-        };
+    async save(createTimecardDto: CreateTimecardDto, user: JwtResponse) {
+        let newTimecard: Prisma.TimecardCreateInput;
+
+        if (this.validateUserIsAdmin(user)) {
+            if (!createTimecardDto.userId) {
+                throw new NotFoundException({
+                    message: 'User ID is required for admin role',
+                });
+            } else {
+                newTimecard = {
+                    ...createTimecardDto,
+                    userId: createTimecardDto.userId,
+                };
+            }
+        } else {
+            newTimecard = {
+                ...createTimecardDto,
+                userId: user.userId,
+            };
+        }
 
         const savedTimecard = await this.timecardsRepository.save(newTimecard);
 
@@ -45,27 +66,70 @@ export class TimecardsService {
         }
     }
 
-    async getById(timecardId: number) {
-        const timecard = await this.validateTimecardId(timecardId);
+    async getByUserId(userId: number, user: JwtResponse) {
+        if (this.validateUserIsAdmin(user)) {
+            const userExists = await this.validateUserId(userId);
 
-        return timecard;
-    }
+            if (userExists) {
+                const timecards =
+                    await this.timecardsRepository.getByUserId(userId);
 
-    async getByUserId(userId: number) {
-        const userExists = await this.validateUserId(userId);
+                return timecards;
+            }
+        } else {
+            if (user.userId !== userId) {
+                throw new ForbiddenException({
+                    message: "Not authorized to access this user's timecards",
+                });
+            } else {
+                const timecards = await this.timecardsRepository.getByUserId(
+                    user.userId,
+                );
 
-        if (userExists) {
-            const timecards =
-                await this.timecardsRepository.getByUserId(userId);
-
-            return timecards;
+                return timecards;
+            }
         }
     }
 
-    async update(timecardId: number, updateTimecardDto: UpdateTimecardDto) {
+    async getById(timecardId: number, user: JwtResponse) {
+        const timecard = await this.validateTimecardId(timecardId);
+
+        if (this.validateUserIsAdmin(user)) {
+            return timecard;
+        } else {
+            if (timecard.userId !== user.userId) {
+                throw new ForbiddenException({
+                    message: "Not authorized to access this user's timecard",
+                });
+            } else {
+                return timecard;
+            }
+        }
+    }
+
+    async update(
+        timecardId: number,
+        updateTimecardDto: UpdateTimecardDto,
+        user: JwtResponse,
+    ) {
         const validateTimecardId = await this.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
+            if (this.validateUserIsAdmin(user)) {
+                if (!updateTimecardDto.userId) {
+                    throw new NotFoundException({
+                        message: 'User ID is required for admin role',
+                    });
+                }
+            } else {
+                if (validateTimecardId.userId !== user.userId) {
+                    throw new ForbiddenException({
+                        message:
+                            "Not authorized to access this user's timecard",
+                    });
+                }
+            }
+
             const newTimecard: Prisma.TimecardUpdateInput = {
                 ...updateTimecardDto,
             };
@@ -82,16 +146,32 @@ export class TimecardsService {
         }
     }
 
-    async delete(timecardId: number) {
+    async delete(timecardId: number, user: JwtResponse) {
         const validateTimecardId = await this.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            await this.timecardsRepository.delete(timecardId);
+            if (this.validateUserIsAdmin(user)) {
+                await this.timecardsRepository.delete(timecardId);
 
-            return {
-                message: 'Timecard deleted successfully',
-                deletedTimecardId: timecardId,
-            };
+                return {
+                    message: 'Timecard deleted successfully',
+                    deletedTimecardId: timecardId,
+                };
+            } else {
+                if (validateTimecardId.userId !== user.userId) {
+                    throw new ForbiddenException({
+                        message:
+                            "Not authorized to access this user's timecard",
+                    });
+                } else {
+                    await this.timecardsRepository.delete(timecardId);
+
+                    return {
+                        message: 'Timecard deleted successfully',
+                        deletedTimecardId: timecardId,
+                    };
+                }
+            }
         }
     }
 
@@ -119,6 +199,14 @@ export class TimecardsService {
             throw new NotFoundException({
                 message: 'User has no timecards available',
             });
+        } else {
+            return true;
+        }
+    }
+
+    validateUserIsAdmin(user: JwtResponse) {
+        if (user.role !== 'admin') {
+            return false;
         } else {
             return true;
         }

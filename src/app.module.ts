@@ -6,6 +6,7 @@ import { TimecardsModule } from './timecards/timecards.module';
 import { DatabaseModule } from './database/database.module';
 import { EntriesModule } from './entries/entries.module';
 import { LoggerModule } from './logger/logger.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { LoggerModule } from './logger/logger.module';
         TimecardsModule,
         DatabaseModule,
         EntriesModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService],
