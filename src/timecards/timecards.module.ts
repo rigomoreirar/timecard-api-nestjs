@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { TimecardsService } from './timecards.service';
 import { TimecardsController } from './timecards.controller';
 import { DatabaseModule } from '../database/database.module';
-import { TimecardsRepository } from './timecards.repository';
-import { LoggerModule } from 'src/logger/logger.module';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { ValidationModule } from 'src/validation/validation.module';
 
 @Module({
-    imports: [DatabaseModule, LoggerModule],
+    imports: [DatabaseModule, RepositoriesModule, ValidationModule],
     controllers: [TimecardsController],
-    providers: [TimecardsService, TimecardsRepository],
+    providers: [TimecardsService],
     exports: [TimecardsService],
 })
 export class TimecardsModule {}

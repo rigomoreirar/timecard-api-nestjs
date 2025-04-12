@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 import { EntriesService } from './entries.service';
 import { EntriesController } from './entries.controller';
 import { DatabaseModule } from '../database/database.module';
-import { EntriesRepository } from './entries.repository';
-import { LoggerModule } from 'src/logger/logger.module';
-import { TimecardsModule } from 'src/timecards/timecards.module';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { ValidationModule } from 'src/validation/validation.module';
 
 @Module({
-    imports: [DatabaseModule, LoggerModule, TimecardsModule],
+    imports: [DatabaseModule, RepositoriesModule, ValidationModule],
     controllers: [EntriesController],
-    providers: [EntriesService, EntriesRepository],
+    providers: [EntriesService],
 })
 export class EntriesModule {}

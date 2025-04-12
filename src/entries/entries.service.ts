@@ -1,24 +1,20 @@
-import {
-    BadRequestException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
-import { EntriesRepository } from './entries.repository';
-import { TimecardsService } from 'src/timecards/timecards.service';
-import { Prisma } from '@prisma/client';
+import { EntriesRepository } from '../repositories/entries.repository';
+import { ValidationService } from 'src/validation/validation.service';
 
 @Injectable()
 export class EntriesService {
     constructor(
         private readonly entriesRepository: EntriesRepository,
-        private readonly timecardsService: TimecardsService,
+        private readonly validationService: ValidationService,
     ) {}
 
     async save(createEntryDto: CreateEntryDto, timecardId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(timecardId);
+            await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             const newEntry: Prisma.EntryCreateInput = {
@@ -39,7 +35,7 @@ export class EntriesService {
 
     async getAll(timecardId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(timecardId);
+            await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
             const allEntries = await this.entriesRepository.getAll(timecardId);
@@ -56,10 +52,13 @@ export class EntriesService {
 
     async getById(timecardId: number, entryId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(timecardId);
+            await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            const entry = await this.validateEntryId(entryId, timecardId);
+            const entry = await this.validationService.validateEntryId(
+                entryId,
+                timecardId,
+            );
 
             return entry;
         }
@@ -71,13 +70,14 @@ export class EntriesService {
         entryId: number,
     ) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(timecardId);
+            await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            const validateEntryId = await this.validateEntryId(
-                entryId,
-                timecardId,
-            );
+            const validateEntryId =
+                await this.validationService.validateEntryId(
+                    entryId,
+                    timecardId,
+                );
 
             if (validateEntryId) {
                 const newEntry: Prisma.EntryUpdateInput = {
@@ -99,12 +99,13 @@ export class EntriesService {
     }
     async delete(timecardId: number, entryId: number) {
         const validateTimecardId =
-            await this.timecardsService.validateTimecardId(timecardId);
+            await this.validationService.validateTimecardId(timecardId);
         if (validateTimecardId) {
-            const validateEntryId = await this.validateEntryId(
-                entryId,
-                timecardId,
-            );
+            const validateEntryId =
+                await this.validationService.validateEntryId(
+                    entryId,
+                    timecardId,
+                );
 
             if (validateEntryId) {
                 await this.entriesRepository.delete(entryId);
@@ -115,18 +116,6 @@ export class EntriesService {
                     parentTimecardId: timecardId,
                 };
             }
-        }
-    }
-
-    async validateEntryId(entryId: number, timecardId: number) {
-        const entry = await this.entriesRepository.getById(timecardId, entryId);
-
-        if (!entry) {
-            throw new BadRequestException({
-                message: 'Entry does not exist',
-            });
-        } else {
-            return entry;
         }
     }
 }

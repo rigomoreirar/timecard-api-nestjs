@@ -3,20 +3,24 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { JwtResponse } from 'src/auth/auth.interface';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
-import { Prisma } from '@prisma/client';
-import { TimecardsRepository } from './timecards.repository';
-import { JwtResponse } from 'src/auth/auth.interface';
+import { TimecardsRepository } from '../repositories/timecards.repository';
+import { ValidationService } from 'src/validation/validation.service';
 
 @Injectable()
 export class TimecardsService {
-    constructor(private readonly timecardsRepository: TimecardsRepository) {}
+    constructor(
+        private readonly timecardsRepository: TimecardsRepository,
+        private readonly validationService: ValidationService,
+    ) {}
 
     async save(createTimecardDto: CreateTimecardDto, user: JwtResponse) {
         let newTimecard: Prisma.TimecardCreateInput;
 
-        if (this.validateUserIsAdmin(user)) {
+        if (this.validationService.validateUserIsAdmin(user)) {
             if (!createTimecardDto.userId) {
                 throw new NotFoundException({
                     message: 'User ID is required for admin role',
@@ -67,8 +71,9 @@ export class TimecardsService {
     }
 
     async getByUserId(userId: number, user: JwtResponse) {
-        if (this.validateUserIsAdmin(user)) {
-            const userExists = await this.validateUserId(userId);
+        if (this.validationService.validateUserIsAdmin(user)) {
+            const userExists =
+                await this.validationService.validateUserId(userId);
 
             if (userExists) {
                 const timecards =
@@ -92,9 +97,10 @@ export class TimecardsService {
     }
 
     async getById(timecardId: number, user: JwtResponse) {
-        const timecard = await this.validateTimecardId(timecardId);
+        const timecard =
+            await this.validationService.validateTimecardId(timecardId);
 
-        if (this.validateUserIsAdmin(user)) {
+        if (this.validationService.validateUserIsAdmin(user)) {
             return timecard;
         } else {
             if (timecard.userId !== user.userId) {
@@ -112,10 +118,11 @@ export class TimecardsService {
         updateTimecardDto: UpdateTimecardDto,
         user: JwtResponse,
     ) {
-        const validateTimecardId = await this.validateTimecardId(timecardId);
+        const validateTimecardId =
+            await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            if (this.validateUserIsAdmin(user)) {
+            if (this.validationService.validateUserIsAdmin(user)) {
                 if (!updateTimecardDto.userId) {
                     throw new NotFoundException({
                         message: 'User ID is required for admin role',
@@ -147,10 +154,11 @@ export class TimecardsService {
     }
 
     async delete(timecardId: number, user: JwtResponse) {
-        const validateTimecardId = await this.validateTimecardId(timecardId);
+        const validateTimecardId =
+            await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
-            if (this.validateUserIsAdmin(user)) {
+            if (this.validationService.validateUserIsAdmin(user)) {
                 await this.timecardsRepository.delete(timecardId);
 
                 return {
@@ -172,43 +180,6 @@ export class TimecardsService {
                     };
                 }
             }
-        }
-    }
-
-    async validateTimecardId(timecardId: number) {
-        const timecard = await this.timecardsRepository.getById(timecardId);
-
-        if (!timecard) {
-            throw new NotFoundException({
-                message: 'Timecard does not exist',
-            });
-        } else {
-            return timecard;
-        }
-    }
-
-    async validateUserId(userId: number) {
-        const users = await this.timecardsRepository.getAllUsers();
-        let userExists = false;
-
-        if (users) {
-            userExists = users.some((user) => user.userId === userId);
-        }
-
-        if (!userExists) {
-            throw new NotFoundException({
-                message: 'User has no timecards available',
-            });
-        } else {
-            return true;
-        }
-    }
-
-    validateUserIsAdmin(user: JwtResponse) {
-        if (user.role !== 'admin') {
-            return false;
-        } else {
-            return true;
         }
     }
 }

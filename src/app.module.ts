@@ -7,6 +7,8 @@ import { DatabaseModule } from './database/database.module';
 import { EntriesModule } from './entries/entries.module';
 import { LoggerModule } from './logger/logger.module';
 import { AuthModule } from './auth/auth.module';
+import { ValidationModule } from './validation/validation.module';
+import { RepositoriesModule } from './repositories/repositories.module';
 
 @Module({
     imports: [
@@ -18,6 +20,8 @@ import { AuthModule } from './auth/auth.module';
         DatabaseModule,
         EntriesModule,
         AuthModule,
+        ValidationModule,
+        RepositoriesModule,
     ],
     controllers: [AppController],
     providers: [AppService],
