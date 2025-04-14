@@ -37,6 +37,21 @@ export class TimecardsRepository {
         }
     }
 
+    async getAllByUser(userId: number) {
+        try {
+            return await this.databaseService.timecard.findMany({
+                where: { isDeleted: false, userId: userId },
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new InternalServerErrorException({
+                    message: 'Failed to retrieve all timecards data by user ID',
+                });
+            }
+            throw error;
+        }
+    }
+
     async getAllUsers() {
         try {
             return await this.databaseService.timecard.findMany({

@@ -12,4 +12,8 @@ export class CreateEntryDto {
     @IsString({ message: 'Optional details must be a string.' })
     @IsOptional()
     optionalDetails: string;
+
+    @IsInt({ message: 'User ID must be an integer.' })
+    @IsOptional()
+    userId: number;
 }

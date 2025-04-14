@@ -3,7 +3,7 @@ import {
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Timecard } from '@prisma/client';
 import { JwtResponse } from 'src/auth/auth.interface';
 import { CreateTimecardDto } from './dto/create-timecard.dto';
 import { UpdateTimecardDto } from './dto/update-timecard.dto';
@@ -46,16 +46,24 @@ export class TimecardsService {
         };
     }
 
-    async getAll() {
-        const allTimecards = await this.timecardsRepository.getAll();
+    async getAll(user: JwtResponse) {
+        let allTimecards: Timecard[];
+
+        if (this.validationService.validateUserIsAdmin(user)) {
+            allTimecards = await this.timecardsRepository.getAll();
+        } else {
+            allTimecards = await this.timecardsRepository.getAllByUser(
+                user.userId,
+            );
+        }
 
         if (!allTimecards || allTimecards.length === 0) {
             throw new NotFoundException({
                 message: 'No timecards found',
             });
-        } else {
-            return allTimecards;
         }
+
+        return allTimecards;
     }
 
     async getAllUsers() {

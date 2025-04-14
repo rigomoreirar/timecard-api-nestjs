@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CreateEntryDto } from './dto/create-entry.dto';
 import { UpdateEntryDto } from './dto/update-entry.dto';
 import { EntriesRepository } from '../repositories/entries.repository';
 import { ValidationService } from 'src/validation/validation.service';
+import { JwtResponse } from 'src/auth/auth.interface';
 
 @Injectable()
 export class EntriesService {
@@ -12,11 +17,24 @@ export class EntriesService {
         private readonly validationService: ValidationService,
     ) {}
 
-    async save(createEntryDto: CreateEntryDto, timecardId: number) {
+    async save(
+        createEntryDto: CreateEntryDto,
+        timecardId: number,
+        user: JwtResponse,
+    ) {
         const validateTimecardId =
             await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
+            if (!this.validationService.validateUserIsAdmin(user)) {
+                if (validateTimecardId.userId !== user.userId) {
+                    throw new ForbiddenException({
+                        message:
+                            "Not authorized to access this user's timecard",
+                    });
+                }
+            }
+
             const newEntry: Prisma.EntryCreateInput = {
                 task: createEntryDto.task,
                 optionalDetails: createEntryDto.optionalDetails,
@@ -33,11 +51,19 @@ export class EntriesService {
         }
     }
 
-    async getAll(timecardId: number) {
+    async getAll(timecardId: number, user: JwtResponse) {
         const validateTimecardId =
             await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
+            if (!this.validationService.validateUserIsAdmin(user)) {
+                if (validateTimecardId.userId !== user.userId) {
+                    throw new ForbiddenException({
+                        message:
+                            "Not authorized to access this user's timecard",
+                    });
+                }
+            }
             const allEntries = await this.entriesRepository.getAll(timecardId);
 
             if (!allEntries || allEntries.length === 0) {
@@ -50,11 +76,20 @@ export class EntriesService {
         }
     }
 
-    async getById(timecardId: number, entryId: number) {
+    async getById(timecardId: number, entryId: number, user: JwtResponse) {
         const validateTimecardId =
             await this.validationService.validateTimecardId(timecardId);
 
         if (validateTimecardId) {
+            if (!this.validationService.validateUserIsAdmin(user)) {
+                if (validateTimecardId.userId !== user.userId) {
+                    throw new ForbiddenException({
+                        message:
+                            "Not authorized to access this user's timecard",
+                    });
+                }
+            }
+
             const entry = await this.validationService.validateEntryId(
                 entryId,
                 timecardId,
@@ -68,6 +103,7 @@ export class EntriesService {
         updateEntryDto: UpdateEntryDto,
         timecardId: number,
         entryId: number,
+        user: JwtResponse,
     ) {
         const validateTimecardId =
             await this.validationService.validateTimecardId(timecardId);
@@ -80,6 +116,15 @@ export class EntriesService {
                 );
 
             if (validateEntryId) {
+                if (!this.validationService.validateUserIsAdmin(user)) {
+                    if (validateTimecardId.userId !== user.userId) {
+                        throw new ForbiddenException({
+                            message:
+                                "Not authorized to access this user's timecard",
+                        });
+                    }
+                }
+
                 const newEntry: Prisma.EntryUpdateInput = {
                     task: updateEntryDto.task,
                     optionalDetails: updateEntryDto.optionalDetails,
@@ -97,7 +142,7 @@ export class EntriesService {
             }
         }
     }
-    async delete(timecardId: number, entryId: number) {
+    async delete(timecardId: number, entryId: number, user: JwtResponse) {
         const validateTimecardId =
             await this.validationService.validateTimecardId(timecardId);
         if (validateTimecardId) {
@@ -108,6 +153,15 @@ export class EntriesService {
                 );
 
             if (validateEntryId) {
+                if (!this.validationService.validateUserIsAdmin(user)) {
+                    if (validateTimecardId.userId !== user.userId) {
+                        throw new ForbiddenException({
+                            message:
+                                "Not authorized to access this user's timecard",
+                        });
+                    }
+                }
+
                 await this.entriesRepository.delete(entryId);
 
                 return {

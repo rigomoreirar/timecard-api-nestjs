@@ -31,9 +31,9 @@ export class TimecardsController {
     }
 
     @Get()
-    @UseGuards(AuthGuard('jwt'), AdminRoleGuard)
-    getAll() {
-        return this.timecardsService.getAll();
+    @UseGuards(AuthGuard('jwt'))
+    getAll(@AuthUser() user: JwtResponse) {
+        return this.timecardsService.getAll(user);
     }
 
     @Get('/users')
